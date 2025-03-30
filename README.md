@@ -4,6 +4,10 @@
 
 #### Usage
 
+Variables are supported, but only `a-z`. No multi-character variable names or uppercase letters.
+
+All variables are **initialized to 0** at runtime.
+
 ```bash
 $> ./bitline
 
