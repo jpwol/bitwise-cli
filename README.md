@@ -54,7 +54,8 @@ cd bin
 
 ##### Windows
 
-> [!NOTE] Ensure you have `libc` and `gcc` installed
+> [!NOTE]
+> Ensure you have `libc` and `gcc` installed
 
 ```bash
 git clone https://github.ocm/jpwol/bitline.git
