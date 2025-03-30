@@ -8,7 +8,6 @@ int main() {
     Token tokens[MAX_TOKENS];
     Token rpn[MAX_TOKENS];
 
-    // printf("\033[35m>>>\033[0m ");
     // newlines in my buffer? more likely than you think
     input[strcspn(input, "\n")] = '\0';
 
