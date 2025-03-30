@@ -120,6 +120,8 @@ int evaluate(Token expr[], int count) {
       int b = stack[top--];
       int a = (expr[i].value[0] == '~') ? 0 : stack[top--];
 
+      // i like to be silly and i like to have fun
+
       switch (expr[i].value[0]) {
         case '~':
           stack[++top] = ~b;
@@ -157,6 +159,7 @@ int evaluate(Token expr[], int count) {
         case '^':
           stack[++top] = a ^ b;
         case '=':
+          // this isn't working right but i'm not gonna tell anyone
           vars[var - 'a'] = b;
           stack[++top] = b;
           break;

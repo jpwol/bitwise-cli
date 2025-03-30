@@ -11,6 +11,6 @@ set(BIN_DIR "${CMAKE_SOURCE_DIR}/bin")
 make_directory(${BIN_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BIN_DIR})
 
-add_executable(bitstack ${SRC_FILES})
+add_executable(bitline ${SRC_FILES})
 
-target_include_directories(bitstack PRIVATE include)
+target_include_directories(bitline PRIVATE include)
