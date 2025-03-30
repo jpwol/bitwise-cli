@@ -1,24 +1,22 @@
-#include "Parser.h"
+#include "Parse.h"
 
 int main() {
-  char expr[MAX_LEN];
-  int x;
+  while (1) {
+    char input[MAX_EXPR_LEN];
 
-  printf("Enter value of x: ");
-  scanf("%d", &x);
+    Token tokens[MAX_TOKENS];
+    Token rpn[MAX_TOKENS];
 
-  getchar();  // newlines in my buffer? more likely than you think
+    printf("\033[35m>>>\033[0m ");
+    fgets(input, MAX_EXPR_LEN, stdin);
+    // newlines in my buffer? more likely than you think
+    input[strcspn(input, "\n")] = '\0';
 
-  printf("Enter bitwise expression (using x): ");
-  fgets(expr, MAX_LEN, stdin);
-  expr[strcspn(expr, "\n")] = '\0';
+    int token_count = tokenize(input, tokens);
+    int rpn_count = shunting_yard(tokens, token_count, rpn);
 
-  Token tokens[MAX_TOKENS], rpn[MAX_TOKENS];
-  int token_count = tokenize(expr, tokens);
-  int rpn_count = infix_to_postfix(tokens, token_count, rpn);
-
-  int result = evaluate_rpn(rpn, rpn_count, x);
-  printf("Result: %d\n", result);
+    printf("%d\n", evaluate(rpn, rpn_count));
+  }
 
   return 0;
 }
