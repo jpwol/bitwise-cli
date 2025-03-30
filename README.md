@@ -28,6 +28,11 @@ It can handle
 - `>` and `<` expressions
 - bitwise operators `(&, |, <<, >>, ~, ^)`
 
+Currently NOT supported
+
+- Input in binary notation
+- Output in binary notation
+
 #### Building
 
 ---
