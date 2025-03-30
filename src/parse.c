@@ -3,22 +3,24 @@
 int precedence(const char* op) {
   switch (op[0]) {
     case '~':
-      return 8;
+      return 9;
     case '*':
     case '/':
-      return 7;
+      return 8;
     case '+':
     case '-':
-      return 6;
+      return 7;
     case '>':
     case '<':
       if (op[1] == '>' || op[1] == '<')
-        return 5;
+        return 6;
       else
-        return 4;
+        return 5;
     case '&':
-      return 3;
+      return 4;
     case '|':
+      return 3;
+    case '^':
       return 2;
     case '=':
       return 1;
@@ -152,6 +154,8 @@ int evaluate(Token expr[], int count) {
         case '|':
           stack[++top] = a | b;
           break;
+        case '^':
+          stack[++top] = a ^ b;
         case '=':
           vars[var - 'a'] = b;
           stack[++top] = b;
