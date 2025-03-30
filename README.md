@@ -65,3 +65,19 @@ gcc -o bin/bitline src/main.c src/parse.c -I include
 cd bin
 ./bitline
 ```
+
+#### How it works
+
+---
+
+This program makes heavy use of the **shunting-yard** algorithm.
+It takes user input as a string and splits it up into **tokens**.
+
+These tokens can be a **number**, **operator**, **variable**, **left parenthesis**, or **right parenthesis**.
+It then creates an array of these tokens in the format they're inputted, usually _infix_ notation.
+
+To compute the results easier, it takes that input and converts it to _postfix_ notation (reverse-polish notation) which is much easier for computers to understand.
+
+Then it simply allocates a stack and pops/pushes the values based on if they're an operator or number.
+
+Operator precedence is calculated in the shunting-yard phase, and operators get pushed to the output stack based on their precedence.
