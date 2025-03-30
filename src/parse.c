@@ -158,6 +158,7 @@ int evaluate(Token expr[], int count) {
           break;
         case '^':
           stack[++top] = a ^ b;
+          break;
         case '=':
           // this isn't working right but i'm not gonna tell anyone
           vars[var - 'a'] = b;
