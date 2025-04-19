@@ -5,6 +5,7 @@ pub const NodeType = enum {
     operator,
     variable,
     function,
+    assignment,
 };
 
 pub const OperatorType = enum {
@@ -38,16 +39,6 @@ pub const Node = struct {
         operator: OperatorType,
         variable: []const u8,
         function: []const u8,
+        assignment: u8,
     };
-
-    pub fn addLeft(self: *Self, node: *Node) void {
-        if (self.left == null) {
-            self.left = node;
-        }
-    }
-    pub fn addRight(self: *Self, node: *Node) void {
-        if (self.right == null) {
-            self.right = node;
-        }
-    }
 };

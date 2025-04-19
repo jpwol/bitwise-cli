@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const TokenType = enum {
+pub const TokenType = enum {
     number,
     identifier,
     plus,
