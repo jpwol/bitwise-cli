@@ -22,7 +22,7 @@ pub fn main() !void {
             const tokens = try Lexer.lex(i, std.heap.page_allocator);
             var pos: usize = 0;
 
-            const root = try Parser.parseAssignment(tokens, &pos);
+            const root = try Parser.parseExpression(tokens, &pos);
             const result = try Parser.evaluate(root, &var_table);
 
             try writer.print("{}\n", .{result});

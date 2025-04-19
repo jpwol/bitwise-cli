@@ -18,6 +18,7 @@ pub const TokenType = enum {
     eql,
     lparen,
     rparen,
+    comma,
     eof,
 };
 
@@ -101,6 +102,10 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
             },
             '=' => {
                 try tokens.append(Token{ .type = .eql, .value = null });
+                i += 1;
+            },
+            ',' => {
+                try tokens.append(Token{ .type = .comma, .value = null });
                 i += 1;
             },
             else => {

@@ -5,6 +5,7 @@ const HashTable = @import("hash.zig").HashTable(i64, 128);
 const allocator = std.heap.page_allocator;
 
 const Node = ast.Node;
+const Function = ast.Function;
 const Token = lexer.Token;
 const TokenType = lexer.TokenType;
 
@@ -13,14 +14,35 @@ const ParseError = error{
     ExpectedFactor,
     UnexpectedToken,
     UnknownOperator,
+    UnknownFunction,
     OutOfMemory,
     Overflow,
     InvalidCharacter,
+    InvalidArgsNumber,
 };
 
 pub fn evaluate(node: *Node, var_table: *HashTable) !i64 {
     switch (node.node_type) {
         .constant => return node.value.constant,
+        .function => {
+            const function_type = node.value.function.name;
+            const args = node.value.function.args;
+            if (args.len != 1) return error.InvalidArgsNumber;
+
+            const x = try evaluate(args[0], var_table);
+
+            return switch (function_type) {
+                .sqrt => {
+                    if (x < 0) {
+                        return error.SqrtOfNegative;
+                    } else {
+                        return @intFromFloat(@sqrt(@as(f64, @floatFromInt(x))));
+                    }
+                },
+                .sin => @intFromFloat(@sin(@as(f64, @floatFromInt(x)))),
+                .cos => @intFromFloat(@cos(@as(f64, @floatFromInt(x)))),
+            };
+        },
         .variable => {
             const name = node.value.variable;
             if (var_table.*.get(name)) |val| {
@@ -61,8 +83,8 @@ pub fn evaluate(node: *Node, var_table: *HashTable) !i64 {
                 .sub => lhs - rhs,
                 .mul => lhs * rhs,
                 .div => if (rhs == 0) return error.DivideByZero else @divExact(lhs, rhs),
-                .greater => if (lhs > rhs) return 1 else return 0,
-                .less => if (lhs < rhs) return 1 else return 0,
+                .greater => @intFromBool(lhs > rhs),
+                .less => @intFromBool(lhs < rhs),
                 .shift_left => lhs << @intCast(rhs),
                 .shift_right => lhs >> @intCast(rhs),
                 .bit_and => lhs & rhs,
@@ -74,24 +96,24 @@ pub fn evaluate(node: *Node, var_table: *HashTable) !i64 {
                 .rparen => 0,
             };
         },
-        else => return error.UnsupportedNodeType,
+        // else => return error.UnsupportedNodeType,
     }
 }
 
-// fn precedence(token: Token) u8 {
-//     switch (token.type) {
-//         .bit_not => return 9,
-//         .star, .div => return 8,
-//         .plus, .minus => return 7,
-//         .shift_right, .shift_left => return 6,
-//         .less, .greater => return 5,
-//         .bit_and => return 4,
-//         .bit_or => return 3,
-//         .bit_xor => return 2,
-//         .eql => return 1,
-//         else => return 0,
-//     }
-// }
+fn precedence(token: Token) u8 {
+    switch (token.type) {
+        .bit_not => return 9,
+        .star, .div => return 8,
+        .plus, .minus => return 7,
+        .shift_right, .shift_left => return 6,
+        .less, .greater => return 5,
+        .bit_and => return 4,
+        .bit_or => return 3,
+        .bit_xor => return 2,
+        .eql => return 1,
+        else => return 0,
+    }
+}
 
 fn expect(tokens: []Token, pos: *usize, expected: TokenType) !void {
     if (pos.* >= tokens.len or tokens[pos.*].type != expected) return error.UnexpectedToken;
@@ -99,37 +121,96 @@ fn expect(tokens: []Token, pos: *usize, expected: TokenType) !void {
     pos.* += 1;
 }
 
-// factor -> number | identifier | '(' expression ')'
-pub fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
-    if (pos.* >= tokens.len) return ParseError.Overflow;
+pub fn parseExpression(tokens: []Token, pos: *usize) ParseError!*Node {
+    const lhs = try parseBitXor(tokens, pos);
 
-    const tok = tokens[pos.*];
-    pos.* += 1;
-
-    return switch (tok.type) {
-        .number => try makeConstNode(tok),
-        .identifier => try makeIdentifierNode(tok),
-        .lparen => {
-            const expr = try parseExpression(tokens, pos);
-            try expect(tokens, pos, .rparen);
-            return expr;
-        },
-        else => return error.ExpectedFactor,
-    };
-}
-
-fn parseUnary(tokens: []Token, pos: *usize) ParseError!*Node {
-    if (pos.* >= tokens.len) return error.Overflow;
-
-    const tok = tokens[pos.*];
-
-    if (tok.type == .minus or tok.type == .bit_not) {
+    if (lhs.node_type == .variable and pos.* < tokens.len and tokens[pos.*].type == .eql) {
         pos.* += 1;
-        const expr = try parseUnary(tokens, pos);
-        return try makeUnaryNode(tok, expr);
+        const rhs = try parseExpression(tokens, pos);
+        return try makeAssignmentNode(lhs, rhs);
     }
 
-    return parseFactor(tokens, pos);
+    return lhs;
+}
+
+fn parseBitXor(tokens: []Token, pos: *usize) ParseError!*Node {
+    var lhs = try parseBitOr(tokens, pos);
+
+    while (pos.* < tokens.len and tokens[pos.*].type == .bit_xor) {
+        const tok = tokens[pos.*];
+        pos.* += 1;
+        const rhs = try parseBitOr(tokens, pos);
+        lhs = try makeBinaryNode(tok, lhs, rhs);
+    }
+
+    return lhs;
+}
+
+fn parseBitOr(tokens: []Token, pos: *usize) ParseError!*Node {
+    var lhs = try parseBitAnd(tokens, pos);
+
+    while (pos.* < tokens.len and tokens[pos.*].type == .bit_or) {
+        const tok = tokens[pos.*];
+        pos.* += 1;
+        const rhs = try parseBitAnd(tokens, pos);
+        lhs = try makeBinaryNode(tok, lhs, rhs);
+    }
+
+    return lhs;
+}
+
+fn parseBitAnd(tokens: []Token, pos: *usize) ParseError!*Node {
+    var lhs = try parseComparison(tokens, pos);
+
+    while (pos.* < tokens.len and tokens[pos.*].type == .bit_and) {
+        const tok = tokens[pos.*];
+        pos.* += 1;
+        const rhs = try parseComparison(tokens, pos);
+        lhs = try makeBinaryNode(tok, lhs, rhs);
+    }
+
+    return lhs;
+}
+
+fn parseComparison(tokens: []Token, pos: *usize) ParseError!*Node {
+    var lhs = try parseBitShift(tokens, pos);
+
+    while (pos.* < tokens.len and tokens[pos.*].type == .less or tokens[pos.*].type == .greater) {
+        const tok = tokens[pos.*];
+        pos.* += 1;
+        const rhs = try parseBitShift(tokens, pos);
+        lhs = try makeBinaryNode(tok, lhs, rhs);
+    }
+
+    return lhs;
+}
+
+fn parseBitShift(tokens: []Token, pos: *usize) ParseError!*Node {
+    var lhs = try parseAdditive(tokens, pos);
+
+    while (pos.* < tokens.len and tokens[pos.*].type == .shift_left or tokens[pos.*].type == .shift_right) {
+        const tok = tokens[pos.*];
+        pos.* += 1;
+        const rhs = try parseAdditive(tokens, pos);
+        lhs = try makeBinaryNode(tok, lhs, rhs);
+    }
+
+    return lhs;
+}
+
+pub fn parseAdditive(tokens: []Token, pos: *usize) ParseError!*Node {
+    var lhs = try parseTerm(tokens, pos);
+
+    while (pos.* < tokens.len) {
+        const tok = tokens[pos.*];
+        if (tok.type != .plus and tok.type != .minus) break;
+        pos.* += 1;
+
+        const rhs = try parseTerm(tokens, pos);
+        lhs = try makeBinaryNode(tok, lhs, rhs);
+    }
+
+    return lhs;
 }
 
 fn parseTerm(tokens: []Token, pos: *usize) ParseError!*Node {
@@ -147,31 +228,59 @@ fn parseTerm(tokens: []Token, pos: *usize) ParseError!*Node {
     return lhs;
 }
 
-pub fn parseExpression(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseTerm(tokens, pos);
+fn parseUnary(tokens: []Token, pos: *usize) ParseError!*Node {
+    if (pos.* >= tokens.len) return error.Overflow;
 
-    while (pos.* < tokens.len) {
-        const tok = tokens[pos.*];
-        if (tok.type != .plus and tok.type != .minus) break;
+    const tok = tokens[pos.*];
+
+    if (tok.type == .minus or tok.type == .bit_not) {
         pos.* += 1;
-
-        const rhs = try parseTerm(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const expr = try parseUnary(tokens, pos);
+        return try makeUnaryNode(tok, expr);
     }
 
-    return lhs;
+    return parseFactor(tokens, pos);
 }
 
-pub fn parseAssignment(tokens: []Token, pos: *usize) ParseError!*Node {
-    const lhs = try parseExpression(tokens, pos);
+// factor -> number | identifier | '(' expression ')'
+pub fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
+    if (pos.* >= tokens.len) return ParseError.Overflow;
 
-    if (lhs.node_type == .variable and pos.* < tokens.len and tokens[pos.*].type == .eql) {
-        pos.* += 1;
-        const rhs = try parseAssignment(tokens, pos);
-        return try makeAssignmentNode(lhs, rhs);
-    }
+    const tok = tokens[pos.*];
+    pos.* += 1;
 
-    return lhs;
+    return switch (tok.type) {
+        .number => try makeConstNode(tok),
+        .identifier => {
+            if (pos.* < tokens.len and tokens[pos.*].type == .lparen) {
+                pos.* += 1;
+                var args = std.ArrayList(*Node).init(allocator);
+
+                if (tokens[pos.*].type != .rparen) {
+                    while (true) {
+                        const arg = try parseExpression(tokens, pos);
+                        try args.append(arg);
+
+                        if (tokens[pos.*].type == .comma) {
+                            pos.* += 1;
+                        } else break;
+                    }
+                }
+                try expect(tokens, pos, .rparen);
+
+                const arg_array = try args.toOwnedSlice();
+                return try makeFunctionNode(tok, arg_array);
+            }
+
+            return try makeVariableNode(tok);
+        },
+        .lparen => {
+            const expr = try parseExpression(tokens, pos);
+            try expect(tokens, pos, .rparen);
+            return expr;
+        },
+        else => return error.ExpectedFactor,
+    };
 }
 
 pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node) ParseError!*Node {
@@ -245,7 +354,7 @@ fn makeAssignmentNode(identifier: *Node, value: *Node) !*Node {
     return node;
 }
 
-fn makeIdentifierNode(token: Token) !*Node {
+fn makeVariableNode(token: Token) !*Node {
     const node = try allocator.create(Node);
     node.* = Node{
         .node_type = .variable,
@@ -253,5 +362,29 @@ fn makeIdentifierNode(token: Token) !*Node {
         .left = null,
         .right = null,
     };
+    return node;
+}
+
+fn makeFunctionNode(token: Token, args: []*Node) ParseError!*Node {
+    const node = try allocator.create(Node);
+
+    var function_type: Function = undefined;
+
+    if (std.mem.eql(u8, token.value.?, "sqrt")) {
+        function_type = .sqrt;
+    } else if (std.mem.eql(u8, token.value.?, "sin")) {
+        function_type = .sin;
+    } else if (std.mem.eql(u8, token.value.?, "cos")) {
+        function_type = .cos;
+    } else {
+        return error.UnknownFunction;
+    }
+    node.* = Node{
+        .node_type = .function,
+        .value = .{ .function = .{ .name = function_type, .args = args } },
+        .left = null,
+        .right = null,
+    };
+
     return node;
 }

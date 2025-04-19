@@ -26,6 +26,12 @@ pub const OperatorType = enum {
     rparen,
 };
 
+pub const Function = enum {
+    sqrt,
+    sin,
+    cos,
+};
+
 pub const Node = struct {
     const Self = @This();
 
@@ -38,7 +44,10 @@ pub const Node = struct {
         constant: i64,
         operator: OperatorType,
         variable: []const u8,
-        function: []const u8,
+        function: struct {
+            name: Function,
+            args: []*Node,
+        },
         assignment: u8,
     };
 };
