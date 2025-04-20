@@ -19,11 +19,20 @@ pub fn main() !void {
         const input = try reader.readUntilDelimiterOrEof(buf, '\n');
 
         if (input) |i| {
-            const tokens = try Lexer.lex(i, std.heap.page_allocator);
+            const tokens = Lexer.lex(i, std.heap.page_allocator) catch |err| {
+                std.debug.print("Error: {}\n", .{err});
+                continue;
+            };
             var pos: usize = 0;
 
-            const root = try Parser.parseExpression(tokens, &pos);
-            const result = try Parser.evaluate(root, &var_table);
+            const root = Parser.parseExpression(tokens, &pos) catch |err| {
+                std.debug.print("Error: {}\n", .{err});
+                continue;
+            };
+            const result = Parser.evaluate(root, &var_table) catch |err| {
+                std.debug.print("Error: {}\n", .{err});
+                continue;
+            };
 
             try writer.print("{}\n", .{result});
         } else {
