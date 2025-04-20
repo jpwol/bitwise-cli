@@ -40,6 +40,7 @@ $> ./bitline
 15
 >>> foo
 15
+>>> exit(0)
 ```
 
 #### Building
