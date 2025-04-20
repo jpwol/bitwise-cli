@@ -17,8 +17,7 @@ pub fn HashTable(comptime T: type, size: u64) type {
             inline fn hash(key: []const u8, table_size: u64) u64 {
                 var h: u64 = 0;
                 for (key) |c| {
-                    // h = h * 31 + c;
-                    h = h + c;
+                    h = h * 31 + c;
                 }
 
                 return h % table_size;
