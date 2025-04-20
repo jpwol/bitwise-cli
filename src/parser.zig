@@ -21,6 +21,7 @@ pub const ParseError = error{
     InvalidArgsNumber,
     SqrtOfNegative,
     DivideByZero,
+    ReservedName,
 };
 
 pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
@@ -272,9 +273,14 @@ pub fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
 
                 const arg_array = try args.toOwnedSlice();
                 return try makeFunctionNode(tok, arg_array);
-            }
+            } else {
+                if (std.mem.eql(u8, tok.value.?, "sqrt") or
+                    std.mem.eql(u8, tok.value.?, "sin") or
+                    std.mem.eql(u8, tok.value.?, "cos") or
+                    std.mem.eql(u8, tok.value.?, "exit")) return ParseError.ReservedName;
 
-            return try makeVariableNode(tok);
+                return try makeVariableNode(tok);
+            }
         },
         .lparen => {
             const expr = try parseExpression(tokens, pos);
