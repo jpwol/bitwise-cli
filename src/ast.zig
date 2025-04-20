@@ -30,6 +30,7 @@ pub const Function = enum {
     sqrt,
     sin,
     cos,
+    exit,
 };
 
 pub const Node = struct {
