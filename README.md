@@ -24,6 +24,9 @@ Variable names are now fully supported. Use **_any_** alphabetical character or 
 
 All variables are **initialized to 0** at runtime.
 
+> [!NOTE]
+> to exit the program, either use `<CTRL-D>` for _EOF_ or use the builtin exit function, `exit(return_value)`
+
 ```bash
 $> ./bitline
 
