@@ -82,7 +82,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable) !i64 {
                 .add => lhs + rhs,
                 .sub => lhs - rhs,
                 .mul => lhs * rhs,
-                .div => if (rhs == 0) return error.DivideByZero else @divExact(lhs, rhs),
+                .div => if (rhs == 0) return error.DivideByZero else @divTrunc(lhs, rhs),
                 .greater => @intFromBool(lhs > rhs),
                 .less => @intFromBool(lhs < rhs),
                 .shift_left => lhs << @intCast(rhs),
