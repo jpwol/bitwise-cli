@@ -1,6 +1,6 @@
-## bitline
+## bitwise-cli
 
-**bitline** is a _cli interpreter_ for arithmetic and bitwise expressions.
+**bitwise-cli** is a _command-line interpreter_ for arithmetic and bitwise expressions.
 
 - Written in **Zig** (blazing fast)
 - Supports:
