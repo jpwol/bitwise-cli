@@ -28,7 +28,7 @@ All variables are **initialized to 0** at runtime.
 > to exit the program, either use `<CTRL-D>` for _EOF_ or use the builtin exit function, `exit(return_value)`
 
 ```bash
-$> ./bitline
+$> ./bitwise
 
 >>> x
 0
@@ -51,11 +51,11 @@ $> ./bitline
 > Zig version 0.14.0 or higher is required
 
 ```bash
-git clone https://github.com/jpwol/bitline.git
-cd bitline
+git clone https://github.com/jpwol/bitwise-cli.git
+cd bitwise-cli
 zig build
 cd bin
-./bitline
+./bitwise
 ```
 
 Optionally, specify one of `Debug, ReleaseSafe, ReleaseFast, ReleaseSmall` for `-Doptimize`:

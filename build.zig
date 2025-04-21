@@ -6,7 +6,7 @@ pub fn build(b: *std.Build) void {
     const windows = b.option(bool, "windows", "Target Microsoft Windows") orelse false;
 
     const exe = b.addExecutable(.{
-        .name = "bitline",
+        .name = "bitwise",
         .root_source_file = b.path("src/main.zig"),
         .target = b.resolveTargetQuery(.{
             .os_tag = if (windows) .windows else null,
