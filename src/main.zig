@@ -17,15 +17,14 @@ pub fn main() !void {
     var var_table = try HashTable(i64, 128).init(allocator);
     defer var_table.deinit();
 
-    const buf = try allocator.alloc(u8, 1024);
-    defer allocator.free(buf);
+    var buf: [1024]u8 = undefined;
 
     while (true) {
         arena.reset();
 
         try writer.print("\x1b[34m>>>\x1b[0m ", .{});
 
-        const input = try reader.readUntilDelimiterOrEof(buf, '\n');
+        const input = try reader.readUntilDelimiterOrEof(&buf, '\n');
 
         if (input) |i| {
             try arena.ensureCapacity(i.len * @sizeOf(Node));
