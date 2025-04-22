@@ -5,21 +5,22 @@ const allocator = std.heap.page_allocator;
 const Parser = @import("parser.zig");
 const HashTable = @import("hash.zig").HashTable;
 
-const writer = std.io.getStdOut().writer();
-const reader = std.io.getStdIn().reader();
-
 pub fn main() !void {
-    var var_table = try HashTable(i64, 128).init(allocator);
+    const writer = std.io.getStdOut().writer();
+    const reader = std.io.getStdIn().reader();
 
+    var var_table = try HashTable(i64, 128).init(allocator);
+    defer var_table.deinit();
+
+    const buf = try allocator.alloc(u8, 1024);
+    defer allocator.free(buf);
     while (true) {
         try writer.print("\x1b[34m>>>\x1b[0m ", .{});
-
-        const buf = try allocator.alloc(u8, 1024);
 
         const input = try reader.readUntilDelimiterOrEof(buf, '\n');
 
         if (input) |i| {
-            const tokens = Lexer.lex(i, std.heap.page_allocator) catch |err| {
+            const tokens = Lexer.lex(i, allocator) catch |err| {
                 std.debug.print("Error: {}\n", .{err});
                 continue;
             };
