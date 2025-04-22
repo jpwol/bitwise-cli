@@ -3,6 +3,7 @@ const lexer = @import("lexer.zig");
 const ast = @import("ast.zig");
 const HashTable = @import("hash.zig").HashTable(i64, 128);
 const allocator = std.heap.page_allocator;
+const Arena = @import("arena.zig").Arena;
 
 const Node = ast.Node;
 const Function = ast.Function;
@@ -110,136 +111,136 @@ fn expect(tokens: []Token, pos: *usize, expected: TokenType) !void {
     pos.* += 1;
 }
 
-pub fn parseExpression(tokens: []Token, pos: *usize) ParseError!*Node {
-    const lhs = try parseBitXor(tokens, pos);
+pub fn parseExpression(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    const lhs = try parseBitXor(tokens, pos, arena);
 
     if (lhs.node_type == .variable and pos.* < tokens.len and tokens[pos.*].type == .eql) {
         pos.* += 1;
-        const rhs = try parseExpression(tokens, pos);
-        return try makeAssignmentNode(lhs, rhs);
+        const rhs = try parseExpression(tokens, pos, arena);
+        return try makeAssignmentNode(lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseBitXor(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseBitOr(tokens, pos);
+fn parseBitXor(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseBitOr(tokens, pos, arena);
 
     while (pos.* < tokens.len and tokens[pos.*].type == .bit_xor) {
         const tok = tokens[pos.*];
         pos.* += 1;
-        const rhs = try parseBitOr(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseBitOr(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseBitOr(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseBitAnd(tokens, pos);
+fn parseBitOr(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseBitAnd(tokens, pos, arena);
 
     while (pos.* < tokens.len and tokens[pos.*].type == .bit_or) {
         const tok = tokens[pos.*];
         pos.* += 1;
-        const rhs = try parseBitAnd(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseBitAnd(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseBitAnd(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseComparison(tokens, pos);
+fn parseBitAnd(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseComparison(tokens, pos, arena);
 
     while (pos.* < tokens.len and tokens[pos.*].type == .bit_and) {
         const tok = tokens[pos.*];
         pos.* += 1;
-        const rhs = try parseComparison(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseComparison(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseComparison(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseBitShift(tokens, pos);
+fn parseComparison(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseBitShift(tokens, pos, arena);
 
     while (pos.* < tokens.len and tokens[pos.*].type == .less or tokens[pos.*].type == .greater) {
         const tok = tokens[pos.*];
         pos.* += 1;
-        const rhs = try parseBitShift(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseBitShift(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseBitShift(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseAdditive(tokens, pos);
+fn parseBitShift(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseAdditive(tokens, pos, arena);
 
     while (pos.* < tokens.len and tokens[pos.*].type == .shift_left or tokens[pos.*].type == .shift_right) {
         const tok = tokens[pos.*];
         pos.* += 1;
-        const rhs = try parseAdditive(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseAdditive(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseAdditive(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseTerm(tokens, pos);
+fn parseAdditive(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseTerm(tokens, pos, arena);
 
     while (pos.* < tokens.len) {
         const tok = tokens[pos.*];
         if (tok.type != .plus and tok.type != .minus) break;
         pos.* += 1;
 
-        const rhs = try parseTerm(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseTerm(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseTerm(tokens: []Token, pos: *usize) ParseError!*Node {
-    var lhs = try parseUnary(tokens, pos);
+fn parseTerm(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
+    var lhs = try parseUnary(tokens, pos, arena);
 
     while (pos.* < tokens.len) {
         const tok = tokens[pos.*];
         if (tok.type != .star and tok.type != .div) break;
         pos.* += 1;
 
-        const rhs = try parseUnary(tokens, pos);
-        lhs = try makeBinaryNode(tok, lhs, rhs);
+        const rhs = try parseUnary(tokens, pos, arena);
+        lhs = try makeBinaryNode(tok, lhs, rhs, arena);
     }
 
     return lhs;
 }
 
-fn parseUnary(tokens: []Token, pos: *usize) ParseError!*Node {
+fn parseUnary(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
     if (pos.* >= tokens.len) return ParseError.Overflow;
 
     const tok = tokens[pos.*];
 
     if (tok.type == .minus or tok.type == .bit_not) {
         pos.* += 1;
-        const expr = try parseUnary(tokens, pos);
-        return try makeUnaryNode(tok, expr);
+        const expr = try parseUnary(tokens, pos, arena);
+        return try makeUnaryNode(tok, expr, arena);
     }
 
-    return parseFactor(tokens, pos);
+    return parseFactor(tokens, pos, arena);
 }
 
 // factor -> number | identifier | '(' expression ')'
-fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
+fn parseFactor(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
     if (pos.* >= tokens.len) return ParseError.Overflow;
 
     const tok = tokens[pos.*];
     pos.* += 1;
 
     return switch (tok.type) {
-        .number => try makeConstNode(tok),
+        .number => try makeConstNode(tok, arena),
         .identifier => {
             if (pos.* < tokens.len and tokens[pos.*].type == .lparen) {
                 pos.* += 1;
@@ -247,7 +248,7 @@ fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
 
                 if (tokens[pos.*].type != .rparen) {
                     while (true) {
-                        const arg = try parseExpression(tokens, pos);
+                        const arg = try parseExpression(tokens, pos, arena);
                         try args.append(arg);
 
                         if (tokens[pos.*].type == .comma) {
@@ -258,18 +259,18 @@ fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
                 try expect(tokens, pos, .rparen);
 
                 const arg_array = try args.toOwnedSlice();
-                return try makeFunctionNode(tok, arg_array);
+                return try makeFunctionNode(tok, arg_array, arena);
             } else {
                 if (std.mem.eql(u8, tok.value.?, "sqrt") or
                     std.mem.eql(u8, tok.value.?, "sin") or
                     std.mem.eql(u8, tok.value.?, "cos") or
                     std.mem.eql(u8, tok.value.?, "exit")) return ParseError.ReservedName;
 
-                return try makeVariableNode(tok);
+                return try makeVariableNode(tok, arena);
             }
         },
         .lparen => {
-            const expr = try parseExpression(tokens, pos);
+            const expr = try parseExpression(tokens, pos, arena);
             try expect(tokens, pos, .rparen);
             return expr;
         },
@@ -277,8 +278,8 @@ fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
     };
 }
 
-pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node) ParseError!*Node {
-    const node = try allocator.create(Node);
+pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node, arena: *Arena) ParseError!*Node {
+    const node = try arena.alloc(Node);
     node.* = Node{
         .node_type = .operator,
         .value = .{ .operator = switch (op.type) {
@@ -304,10 +305,10 @@ pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node) ParseError!*Node {
     return node;
 }
 
-pub fn makeConstNode(token: Token) ParseError!*Node {
+pub fn makeConstNode(token: Token, arena: *Arena) ParseError!*Node {
     const value_int = try std.fmt.parseInt(i64, token.value.?, 10);
 
-    const node = try allocator.create(Node);
+    const node = try arena.alloc(Node);
     node.* = Node{
         .node_type = .constant,
         .value = .{ .constant = value_int },
@@ -318,8 +319,8 @@ pub fn makeConstNode(token: Token) ParseError!*Node {
     return node;
 }
 
-fn makeUnaryNode(operator: Token, operand: *Node) !*Node {
-    const node = try allocator.create(Node);
+fn makeUnaryNode(operator: Token, operand: *Node, arena: *Arena) !*Node {
+    const node = try arena.alloc(Node);
 
     node.* = Node{
         .node_type = .operator,
@@ -335,8 +336,8 @@ fn makeUnaryNode(operator: Token, operand: *Node) !*Node {
     return node;
 }
 
-fn makeAssignmentNode(identifier: *Node, value: *Node) !*Node {
-    const node = try allocator.create(Node);
+fn makeAssignmentNode(identifier: *Node, value: *Node, arena: *Arena) !*Node {
+    const node = try arena.alloc(Node);
 
     node.* = Node{
         .node_type = .assignment,
@@ -348,8 +349,8 @@ fn makeAssignmentNode(identifier: *Node, value: *Node) !*Node {
     return node;
 }
 
-fn makeVariableNode(token: Token) !*Node {
-    const node = try allocator.create(Node);
+fn makeVariableNode(token: Token, arena: *Arena) !*Node {
+    const node = try arena.alloc(Node);
     node.* = Node{
         .node_type = .variable,
         .value = .{ .variable = token.value.? },
@@ -359,8 +360,8 @@ fn makeVariableNode(token: Token) !*Node {
     return node;
 }
 
-fn makeFunctionNode(token: Token, args: []*Node) ParseError!*Node {
-    const node = try allocator.create(Node);
+fn makeFunctionNode(token: Token, args: []*Node, arena: *Arena) ParseError!*Node {
+    const node = try arena.alloc(Node);
 
     var function_type: Function = undefined;
 
