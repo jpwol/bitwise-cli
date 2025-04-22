@@ -62,7 +62,8 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
             if (var_table.*.getPtr(name)) |p| {
                 p.* = val;
             } else {
-                try var_table.*.insert(name, val);
+                const ident_copy = try allocator.dupe(u8, name);
+                try var_table.*.insert(ident_copy, val);
             }
 
             return val;
@@ -100,21 +101,6 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
             };
         },
         // else => return ParseError.UnsupportedNodeType,
-    }
-}
-
-fn precedence(token: Token) u8 {
-    switch (token.type) {
-        .bit_not => return 9,
-        .star, .div => return 8,
-        .plus, .minus => return 7,
-        .shift_right, .shift_left => return 6,
-        .less, .greater => return 5,
-        .bit_and => return 4,
-        .bit_or => return 3,
-        .bit_xor => return 2,
-        .eql => return 1,
-        else => return 0,
     }
 }
 
@@ -201,7 +187,7 @@ fn parseBitShift(tokens: []Token, pos: *usize) ParseError!*Node {
     return lhs;
 }
 
-pub fn parseAdditive(tokens: []Token, pos: *usize) ParseError!*Node {
+fn parseAdditive(tokens: []Token, pos: *usize) ParseError!*Node {
     var lhs = try parseTerm(tokens, pos);
 
     while (pos.* < tokens.len) {
@@ -246,7 +232,7 @@ fn parseUnary(tokens: []Token, pos: *usize) ParseError!*Node {
 }
 
 // factor -> number | identifier | '(' expression ')'
-pub fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
+fn parseFactor(tokens: []Token, pos: *usize) ParseError!*Node {
     if (pos.* >= tokens.len) return ParseError.Overflow;
 
     const tok = tokens[pos.*];
