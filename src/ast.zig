@@ -34,8 +34,6 @@ pub const Function = enum {
 };
 
 pub const Node = struct {
-    const Self = @This();
-
     node_type: NodeType,
     value: Value,
     left: ?*Node,
