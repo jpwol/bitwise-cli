@@ -29,6 +29,7 @@ pub const Token = struct {
 
 pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
     var tokens = std.ArrayList(Token).init(allocator);
+    defer tokens.deinit();
     var i: usize = 0;
 
     while (i < input.len) {
