@@ -42,6 +42,20 @@ pub fn HashTable(comptime T: type, size: u64) type {
             };
         }
 
+        pub fn deinit(self: *Self) void {
+            for (self.buckets) |*bucket| {
+                var entry = bucket.*;
+                while (entry) |e| {
+                    const next = e.next;
+                    self.allocator.free(e.key);
+                    self.allocator.destroy(e);
+                    entry = next;
+                }
+            }
+
+            self.allocator.free(self.buckets);
+        }
+
         pub fn insert(self: *Self, key: []const u8, value: T) !void {
             const index = Entry.hash(key, self.size);
 
