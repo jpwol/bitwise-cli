@@ -4,19 +4,19 @@
 
 - Written in **Zig** (blazing fast)
 - Supports:
+
   - Variable assignment
   - Certain _builtin_ functions
+    - sqrt()
+    - sin()
+    - cos()
+    - exit()
   - Parenthesis
   - Arithmetic operators (\*, /, +, -)
   - `>` and `<` expressions
   - Bitwise operators (&, |, <<, >>, ~, ^)
 
-Currently NOT supported
-
-- Float representation
-  - All input must be integers (of size i64)
-- Input in binary notation
-- Output in binary notation
+  All numbers are read as **floats** (f64), and coerced to **integers** (i64) for operations that require it (mainly bit operations)
 
 #### Usage
 
