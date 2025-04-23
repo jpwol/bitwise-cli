@@ -14,7 +14,7 @@ pub fn main() !void {
     var arena = try Arena.init(allocator, 1024);
     defer arena.deinit();
 
-    var var_table = try HashTable(i64, 128).init(allocator);
+    var var_table = try HashTable(f64, 128).init(allocator);
     defer var_table.deinit();
 
     var buf: [1024]u8 = undefined;
@@ -30,21 +30,25 @@ pub fn main() !void {
             try arena.ensureCapacity(i.len * @sizeOf(Node));
 
             const tokens = Lexer.lex(i, allocator) catch |err| {
-                try err_writer.print("Error: {}\n", .{err});
+                try err_writer.print("Lex Error: {}\n", .{err});
                 continue;
             };
 
             var pos: usize = 0;
             const root = Parser.parseExpression(tokens, &pos, &arena) catch |err| {
-                try err_writer.print("Error: {}\n", .{err});
+                try err_writer.print("Parse Error: {}\n", .{err});
                 continue;
             };
             const result = Parser.evaluate(root, &var_table) catch |err| {
-                try err_writer.print("Error: {}\n", .{err});
+                try err_writer.print("Evaluate Error: {}\n", .{err});
                 continue;
             };
 
-            try writer.print("{}\n", .{result});
+            if (@floor(result) == result) {
+                try writer.print("{d}\n", .{result});
+            } else {
+                try writer.print("{d:.2}\n", .{result});
+            }
         } else {
             try writer.print("\n", .{});
             break;

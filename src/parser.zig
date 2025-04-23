@@ -1,7 +1,7 @@
 const std = @import("std");
 const lexer = @import("lexer.zig");
 const ast = @import("ast.zig");
-const HashTable = @import("hash.zig").HashTable(i64, 128);
+const HashTable = @import("hash.zig").HashTable(f64, 128);
 const allocator = std.heap.page_allocator;
 const Arena = @import("arena.zig").Arena;
 
@@ -25,7 +25,7 @@ pub const ParseError = error{
     ReservedName,
 };
 
-pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
+pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
     switch (node.node_type) {
         .constant => return node.value.constant,
         .function => {
@@ -40,12 +40,12 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
                     if (x < 0) {
                         return ParseError.SqrtOfNegative;
                     } else {
-                        return @intFromFloat(@sqrt(@as(f64, @floatFromInt(x))));
+                        return @sqrt(x);
                     }
                 },
-                .sin => @intFromFloat(@sin(@as(f64, @floatFromInt(x)))),
-                .cos => @intFromFloat(@cos(@as(f64, @floatFromInt(x)))),
-                .exit => std.process.exit(@intCast(x)),
+                .sin => @sin(x),
+                .cos => @cos(x),
+                .exit => std.process.exit(0),
             };
         },
         .variable => {
@@ -76,7 +76,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
             if (node.right == null) {
                 return switch (op) {
                     .sub => -lhs,
-                    .bit_not => ~lhs,
+                    // .bit_not => ~(@as(i64, @intFromFloat(lhs))),
                     else => return ParseError.InvalidCharacter,
                 };
             }
@@ -87,21 +87,24 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!i64 {
                 .add => lhs + rhs,
                 .sub => lhs - rhs,
                 .mul => lhs * rhs,
-                .div => if (rhs == 0) return ParseError.DivideByZero else @divTrunc(lhs, rhs),
-                .greater => @intFromBool(lhs > rhs),
-                .less => @intFromBool(lhs < rhs),
-                .shift_left => lhs << @intCast(rhs),
-                .shift_right => lhs >> @intCast(rhs),
-                .bit_and => lhs & rhs,
-                .bit_or => lhs | rhs,
-                .bit_xor => lhs ^ rhs,
-                .bit_not => ~lhs,
+                .div => if (rhs == 0) {
+                    return ParseError.DivideByZero;
+                } else {
+                    return lhs / rhs;
+                },
+                .greater => @floatFromInt(@intFromBool(lhs > rhs)),
+                .less => @floatFromInt(@intFromBool(lhs < rhs)),
+                .shift_left => @floatFromInt((@as(i64, @intFromFloat(lhs))) << @intCast(@as(i64, @intFromFloat(rhs)))),
+                .shift_right => @floatFromInt((@as(i64, @intFromFloat(lhs))) >> @intCast(@as(i64, @intFromFloat(rhs)))),
+                .bit_and => @floatFromInt(@as(i64, @intFromFloat(lhs)) & @as(i64, @intFromFloat(rhs))),
+                .bit_or => @floatFromInt(@as(i64, @intFromFloat(lhs)) | @as(i64, @intFromFloat(rhs))),
+                .bit_xor => @floatFromInt(@as(i64, @intFromFloat(lhs)) ^ @as(i64, @intFromFloat(rhs))),
+                .bit_not => @as(f64, (@floatFromInt(~@as(i64, @intFromFloat(lhs))))),
                 .eql => 0,
                 .lparen => 0,
                 .rparen => 0,
             };
         },
-        // else => return ParseError.UnsupportedNodeType,
     }
 }
 
@@ -306,12 +309,12 @@ pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node, arena: *Arena) ParseErr
 }
 
 pub fn makeConstNode(token: Token, arena: *Arena) ParseError!*Node {
-    const value_int = try std.fmt.parseInt(i64, token.value.?, 10);
+    const value = try std.fmt.parseFloat(f64, token.value.?);
 
     const node = try arena.alloc(Node);
     node.* = Node{
         .node_type = .constant,
-        .value = .{ .constant = value_int },
+        .value = .{ .constant = value },
         .left = null,
         .right = null,
     };

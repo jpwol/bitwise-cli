@@ -1,10 +1,6 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-// const allocator = std.heap.page_allocator;
 
-// pub fn HashTable(comptime T: type, size: u64) type {
-//     return ChainedHashTable(T, size);
-// }
 pub fn HashTable(comptime T: type, size: u64) type {
     return struct {
         const Self = @This();

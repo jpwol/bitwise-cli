@@ -40,7 +40,7 @@ pub const Node = struct {
     right: ?*Node,
 
     const Value = union(NodeType) {
-        constant: i64,
+        constant: f64,
         operator: OperatorType,
         variable: []const u8,
         function: struct {

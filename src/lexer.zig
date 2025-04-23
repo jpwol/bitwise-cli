@@ -29,7 +29,7 @@ pub const Token = struct {
 
 pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
     var tokens = std.ArrayList(Token).init(allocator);
-    defer tokens.deinit();
+    errdefer tokens.deinit();
     var i: usize = 0;
 
     while (i < input.len) {
@@ -40,7 +40,12 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
             },
             '0'...'9' => {
                 const start = i;
-                while (i < input.len and std.ascii.isDigit(input[i])) : (i += 1) {}
+                var dot_seen = false;
+                while (i < input.len and (std.ascii.isDigit(input[i]) or (!dot_seen and input[i] == '.'))) : (i += 1) {
+                    if (input[i] == '.') {
+                        dot_seen = true;
+                    }
+                }
                 try tokens.append(Token{ .type = .number, .value = input[start..i] });
             },
             '+' => {
