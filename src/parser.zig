@@ -264,10 +264,10 @@ fn parseFactor(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
                 const arg_array = try args.toOwnedSlice();
                 return try makeFunctionNode(tok, arg_array, arena);
             } else {
-                if (std.mem.eql(u8, tok.value.?, "sqrt") or
-                    std.mem.eql(u8, tok.value.?, "sin") or
-                    std.mem.eql(u8, tok.value.?, "cos") or
-                    std.mem.eql(u8, tok.value.?, "exit")) return ParseError.ReservedName;
+                const reserved = [_][]const u8{ "sqrt", "sin", "cos", "exit" };
+                for (reserved) |word| {
+                    if (std.mem.eql(u8, tok.value.?, word)) return ParseError.ReservedName;
+                }
 
                 return try makeVariableNode(tok, arena);
             }
@@ -339,7 +339,9 @@ fn makeUnaryNode(operator: Token, operand: *Node, arena: *Arena) !*Node {
     return node;
 }
 
-fn makeAssignmentNode(identifier: *Node, value: *Node, arena: *Arena) !*Node {
+fn makeAssignmentNode(identifier: *Node, value: *Node, arena: *Arena) ParseError!*Node {
+    if (std.mem.eql(u8, identifier.value.variable, "PI")) return ParseError.ReservedName;
+
     const node = try arena.alloc(Node);
 
     node.* = Node{

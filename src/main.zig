@@ -17,6 +17,9 @@ pub fn main() !void {
     var var_table = try HashTable(f64, 128).init(allocator);
     defer var_table.deinit();
 
+    const pi_key = try allocator.dupe(u8, "PI");
+    try var_table.insert(pi_key, 3.14159265359);
+
     var buf: [1024]u8 = undefined;
 
     while (true) {
