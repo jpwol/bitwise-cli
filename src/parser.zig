@@ -76,7 +76,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
             if (node.right == null) {
                 return switch (op) {
                     .sub => -lhs,
-                    // .bit_not => ~(@as(i64, @intFromFloat(lhs))),
+                    .bit_not => @floatFromInt(~(@as(i64, @intFromFloat(lhs)))),
                     else => return ParseError.InvalidCharacter,
                 };
             }
