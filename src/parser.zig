@@ -31,21 +31,47 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
         .function => {
             const function_type = node.value.function.name;
             const args = node.value.function.args;
-            if (args.len != 1) return ParseError.InvalidArgsNumber;
-
-            const x = try evaluate(args[0], var_table);
 
             return switch (function_type) {
                 .sqrt => {
+                    if (args.len != 1) return ParseError.InvalidArgsNumber;
+                    const x = try evaluate(args[0], var_table);
                     if (x < 0) {
                         return ParseError.SqrtOfNegative;
                     } else {
                         return @sqrt(x);
                     }
                 },
-                .sin => @sin(x),
-                .cos => @cos(x),
-                .exit => std.process.exit(0),
+
+                .sin => {
+                    if (args.len != 1) return ParseError.InvalidArgsNumber;
+                    const x = try evaluate(args[0], var_table);
+                    return @sin(x);
+                },
+
+                .cos => {
+                    if (args.len != 1) return ParseError.InvalidArgsNumber;
+                    const x = try evaluate(args[0], var_table);
+                    return @cos(x);
+                },
+                .pow => {
+                    if (args.len != 2) return ParseError.InvalidArgsNumber;
+                    const x = try evaluate(args[0], var_table);
+                    const y = try evaluate(args[1], var_table);
+
+                    return std.math.pow(f64, x, y);
+                },
+                .exit => {
+                    switch (args.len) {
+                        0 => std.process.exit(0),
+                        1 => {
+                            const x = try evaluate(args[0], var_table);
+                            const exit_code = @as(u8, @intFromFloat(x));
+                            std.process.exit(exit_code);
+                        },
+                        else => return ParseError.InvalidArgsNumber,
+                    }
+                },
             };
         },
         .variable => {
@@ -264,7 +290,7 @@ fn parseFactor(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
                 const arg_array = try args.toOwnedSlice();
                 return try makeFunctionNode(tok, arg_array, arena);
             } else {
-                const reserved = [_][]const u8{ "sqrt", "sin", "cos", "exit" };
+                const reserved = [_][]const u8{ "sqrt", "sin", "cos", "pow", "exit" };
                 for (reserved) |word| {
                     if (std.mem.eql(u8, tok.value.?, word)) return ParseError.ReservedName;
                 }
@@ -376,6 +402,8 @@ fn makeFunctionNode(token: Token, args: []*Node, arena: *Arena) ParseError!*Node
         function_type = .sin;
     } else if (std.mem.eql(u8, token.value.?, "cos")) {
         function_type = .cos;
+    } else if (std.mem.eql(u8, token.value.?, "pow")) {
+        function_type = .pow;
     } else if (std.mem.eql(u8, token.value.?, "exit")) {
         function_type = .exit;
     } else {
