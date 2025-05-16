@@ -6,7 +6,7 @@ const Parser = @import("parser.zig");
 const HashTable = @import("hash.zig").HashTable;
 const Arena = @import("arena.zig").Arena;
 
-pub fn main() !void {
+pub fn main() !u8 {
     const writer = std.io.getStdOut().writer();
     const reader = std.io.getStdIn().reader();
     const err_writer = std.io.getStdErr().writer();
@@ -21,6 +21,9 @@ pub fn main() !void {
     try var_table.insert(pi_key, 3.14159265359);
 
     var buf: [1024]u8 = undefined;
+
+    var should_exit = false;
+    var exit_code: u8 = 0;
 
     while (true) {
         arena.reset();
@@ -42,10 +45,15 @@ pub fn main() !void {
                 try err_writer.print("Parse Error: {}\n", .{err});
                 continue;
             };
-            const result = Parser.evaluate(root, &var_table) catch |err| {
+            const result = Parser.evaluate(root, &var_table, &should_exit) catch |err| {
                 try err_writer.print("Evaluate Error: {}\n", .{err});
                 continue;
             };
+
+            if (should_exit) {
+                exit_code = @intFromFloat(result);
+                break;
+            }
 
             if (@floor(result) == result) {
                 try writer.print("{d}\n", .{result});
@@ -57,4 +65,6 @@ pub fn main() !void {
             break;
         }
     }
+
+    return exit_code;
 }
