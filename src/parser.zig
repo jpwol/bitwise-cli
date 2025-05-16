@@ -23,9 +23,10 @@ pub const ParseError = error{
     SqrtOfNegative,
     DivideByZero,
     ReservedName,
+    NameError,
 };
 
-pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
+pub fn evaluate(node: *Node, var_table: *HashTable, should_exit: *bool) ParseError!f64 {
     switch (node.node_type) {
         .constant => return node.value.constant,
         .function => {
@@ -35,7 +36,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
             return switch (function_type) {
                 .sqrt => {
                     if (args.len != 1) return ParseError.InvalidArgsNumber;
-                    const x = try evaluate(args[0], var_table);
+                    const x = try evaluate(args[0], var_table, should_exit);
                     if (x < 0) {
                         return ParseError.SqrtOfNegative;
                     } else {
@@ -45,29 +46,32 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
 
                 .sin => {
                     if (args.len != 1) return ParseError.InvalidArgsNumber;
-                    const x = try evaluate(args[0], var_table);
+                    const x = try evaluate(args[0], var_table, should_exit);
                     return @sin(x);
                 },
 
                 .cos => {
                     if (args.len != 1) return ParseError.InvalidArgsNumber;
-                    const x = try evaluate(args[0], var_table);
+                    const x = try evaluate(args[0], var_table, should_exit);
                     return @cos(x);
                 },
                 .pow => {
                     if (args.len != 2) return ParseError.InvalidArgsNumber;
-                    const x = try evaluate(args[0], var_table);
-                    const y = try evaluate(args[1], var_table);
+                    const x = try evaluate(args[0], var_table, should_exit);
+                    const y = try evaluate(args[1], var_table, should_exit);
 
                     return std.math.pow(f64, x, y);
                 },
                 .exit => {
                     switch (args.len) {
-                        0 => std.process.exit(0),
+                        0 => {
+                            should_exit.* = true;
+                            return 0;
+                        },
                         1 => {
-                            const x = try evaluate(args[0], var_table);
-                            const exit_code = @as(u8, @intFromFloat(x));
-                            std.process.exit(exit_code);
+                            should_exit.* = true;
+                            const x = try evaluate(args[0], var_table, should_exit);
+                            return x;
                         },
                         else => return ParseError.InvalidArgsNumber,
                     }
@@ -79,13 +83,13 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
             if (var_table.*.get(name)) |val| {
                 return val;
             } else {
-                return 0;
+                return ParseError.NameError;
             }
         },
         .assignment => {
             const identifier_node = node.left.?;
             const name = identifier_node.value.variable;
-            const val = try evaluate(node.right.?, var_table);
+            const val = try evaluate(node.right.?, var_table, should_exit);
             if (var_table.*.getPtr(name)) |p| {
                 p.* = val;
             } else {
@@ -97,7 +101,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
         },
         .operator => {
             const op = node.value.operator;
-            const lhs = try evaluate(node.left.?, var_table);
+            const lhs = try evaluate(node.left.?, var_table, should_exit);
 
             if (node.right == null) {
                 return switch (op) {
@@ -107,7 +111,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable) ParseError!f64 {
                 };
             }
 
-            const rhs = try evaluate(node.right.?, var_table);
+            const rhs = try evaluate(node.right.?, var_table, should_exit);
 
             return switch (op) {
                 .add => lhs + rhs,
