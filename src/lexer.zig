@@ -7,6 +7,7 @@ pub const TokenType = enum {
     minus,
     star,
     div,
+    modulo,
     less,
     greater,
     shift_left,
@@ -60,6 +61,14 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
                 try tokens.append(Token{ .type = .star, .value = null });
                 i += 1;
             },
+            '/' => {
+                try tokens.append(Token{ .type = .div, .value = null });
+                i += 1;
+            },
+            '%' => {
+                try tokens.append(Token{ .type = .modulo, .value = null });
+                i += 1;
+            },
             '&' => {
                 try tokens.append(Token{ .type = .bit_and, .value = null });
                 i += 1;
@@ -93,10 +102,6 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
                     try tokens.append(Token{ .type = .greater, .value = null });
                     i += 1;
                 }
-            },
-            '/' => {
-                try tokens.append(Token{ .type = .div, .value = null });
-                i += 1;
             },
             '(' => {
                 try tokens.append(Token{ .type = .lparen, .value = null });

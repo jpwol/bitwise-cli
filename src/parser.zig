@@ -122,6 +122,7 @@ pub fn evaluate(node: *Node, var_table: *HashTable, should_exit: *bool) ParseErr
                 } else {
                     return lhs / rhs;
                 },
+                .modulo => @mod(lhs, rhs),
                 .greater => @floatFromInt(@intFromBool(lhs > rhs)),
                 .less => @floatFromInt(@intFromBool(lhs < rhs)),
                 .shift_left => @floatFromInt((@as(i64, @intFromFloat(lhs))) << @intCast(@as(i64, @intFromFloat(rhs)))),
@@ -241,7 +242,7 @@ fn parseTerm(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
 
     while (pos.* < tokens.len) {
         const tok = tokens[pos.*];
-        if (tok.type != .star and tok.type != .div) break;
+        if (tok.type != .star and tok.type != .div and tok.type != .modulo) break;
         pos.* += 1;
 
         const rhs = try parseUnary(tokens, pos, arena);
@@ -320,6 +321,7 @@ pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node, arena: *Arena) ParseErr
             .minus => .sub,
             .star => .mul,
             .div => .div,
+            .modulo => .modulo,
             .greater => .greater,
             .less => .less,
             .shift_right => .shift_right,

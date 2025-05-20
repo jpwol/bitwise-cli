@@ -13,6 +13,7 @@ pub const OperatorType = enum {
     sub,
     mul,
     div,
+    modulo,
     greater,
     less,
     shift_right,
