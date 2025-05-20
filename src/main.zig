@@ -37,8 +37,6 @@ pub fn main() !u8 {
     while (true) {
         arena.reset();
 
-        try writer.print("\x1b[34m>>>\x1b[0m ", .{});
-
         const buf = try term.getInput(reader, writer, &history, &should_exit);
         if (should_exit) {
             break;
@@ -69,7 +67,7 @@ pub fn main() !u8 {
         if (@floor(result) == result) {
             try writer.print("\n{d}\n", .{result});
         } else {
-            try writer.print("{d:.2}\n", .{result});
+            try writer.print("\n{d:.2}\n", .{result});
         }
     }
     try writer.print("\n", .{});

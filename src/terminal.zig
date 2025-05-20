@@ -24,6 +24,7 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
     var buf: [1024]u8 = undefined;
     var history_index = history.count;
 
+    try writer.print("\x1b[34m>>>\x1b[0m ", .{});
     while (true) {
         const char = try reader.readByte();
         switch (char) {
@@ -32,23 +33,23 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
                 break;
             },
             '\x7f' => {
-                if (i > 0)
+                if (i > 0 and cursor_pos > 0) {
                     i -= 1;
-                if (cursor_pos > 0)
                     cursor_pos -= 1;
 
-                if (cursor_pos == i) {
-                    try writer.print("\x08 \x08", .{});
-                } else if (cursor_pos < i) {
-                    var n = cursor_pos;
-                    while (n < i) : (n += 1) {
-                        buf[n] = buf[n + 1];
-                    }
-                    try writer.print("\x08\x1b[K{s}", .{buf[cursor_pos..i]});
-                    const cursor_shift = i - cursor_pos;
+                    if (cursor_pos == i) {
+                        try writer.print("\x08 \x08", .{});
+                    } else if (cursor_pos < i) {
+                        var n = cursor_pos;
+                        while (n < i) : (n += 1) {
+                            buf[n] = buf[n + 1];
+                        }
+                        try writer.print("\x08\x1b[K{s}", .{buf[cursor_pos..i]});
+                        const cursor_shift = i - cursor_pos;
 
-                    if (cursor_shift > 0)
-                        try writer.print("\x1b[{d}D", .{cursor_shift});
+                        if (cursor_shift > 0)
+                            try writer.print("\x1b[{d}D", .{cursor_shift});
+                    }
                 }
             },
             '\n' => {
@@ -76,8 +77,11 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
                         if (history_index + 1 <= history.count) {
                             history_index += 1;
                             if (history_index == history.count) {
-                                try writer.print("\r\x1b[2K", .{});
+                                try writer.print("\r\x1b[2K\x1b[34m>>>\x1b[0m ", .{});
+                                // try writer.print("\r\x1b[2K", .{});
                                 @memset(buf[0..buf.len], 0);
+                                i = 0;
+                                cursor_pos = 0;
                             } else {
                                 const line = history.get(history_index);
                                 @memcpy(buf[0..line.?.len], line.?);

@@ -3,14 +3,26 @@
 **bitwise-cli** is a _command-line interpreter_ for arithmetic and bitwise expressions.
 
 - Written in **Zig** (blazing fast)
+
+### Features
+
+---
+
+> [NEW!]
+>
+> This program now runs in _non-canonical_ mode, allowing features such as input manipulation and input history! Like in
+> the shell, use the `UP` and `DOWN` arrow keys to cycle through input history, and `LEFT` and `RIGHT` arrow keys to seek
+> through the current buffer string.
+
 - Supports:
 
-  - Variable assignment
+  - Variable assignment (`foo = 20`)
   - Certain _builtin_ functions
-    - sqrt()
-    - sin()
-    - cos()
-    - exit()
+    - `sqrt(x)`
+    - `sin(x)`
+    - `cos(x)`
+    - `pow(x, y)`
+    - `exit()` _or_ `exit(x)`
   - Parenthesis
   - Arithmetic operators (\*, /, +, -)
   - `>` and `<` expressions
@@ -22,7 +34,9 @@
 
 Variable names are now fully supported. Use **_any_** alphabetical character or string as a variable name, as long as it's not reserved for a function name
 
-All variables are **initialized to 0** at runtime.
+> [!IMPORTANT]
+>
+> Variable names are NO LONGER initialized to 0 at runtime. Instead, the program will print an error if the user does not initialize the variable with a value.
 
 > [!NOTE]
 > to exit the program, either use `<CTRL-D>` for _EOF_ or use the builtin exit function, `exit(return_value)`
@@ -30,17 +44,15 @@ All variables are **initialized to 0** at runtime.
 ```bash
 $> ./bitwise
 
->>> x
-0
->>> x = 5
-5
+>>> x = 6
+6
 >>> y = 10
 10
->>> foo = x + y
-15
->>> foo
-15
->>> exit(0)
+>>> foo = sqrt(x + y)
+4
+>>> bar = pow(foo, 2)
+16
+>>> exit()
 ```
 
 #### Building
