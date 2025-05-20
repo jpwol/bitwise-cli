@@ -8,7 +8,7 @@
 
 ---
 
-> [!NEW]
+> **ℹ️ NEW!**
 >
 > This program now runs in _non-canonical_ mode, allowing features such as input manipulation and input history! Like in
 > the shell, use the `UP` and `DOWN` arrow keys to cycle through input history, and `LEFT` and `RIGHT` arrow keys to seek
