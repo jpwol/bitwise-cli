@@ -45,17 +45,17 @@ pub fn main() !u8 {
         try arena.ensureCapacity(buf.len * @sizeOf(Node));
 
         const tokens = Lexer.lex(buf, allocator) catch |err| {
-            try err_writer.print("Lex Error: {}\n", .{err});
+            try err_writer.print("\nLex Error: {}\n", .{err});
             continue;
         };
 
         var pos: usize = 0;
         const root = Parser.parseExpression(tokens, &pos, &arena) catch |err| {
-            try err_writer.print("Parse Error: {}\n", .{err});
+            try err_writer.print("\nParse Error: {}\n", .{err});
             continue;
         };
         const result = Parser.evaluate(root, &var_table, &should_exit) catch |err| {
-            try err_writer.print("Evaluate Error: {}\n", .{err});
+            try err_writer.print("\nEvaluate Error: {}\n", .{err});
             continue;
         };
 
