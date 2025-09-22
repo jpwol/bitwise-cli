@@ -123,17 +123,17 @@ pub fn evaluate(node: *Node, var_table: *HashTable, should_exit: *bool) ParseErr
                     return lhs / rhs;
                 },
                 .modulo => @mod(lhs, rhs),
-                .greater => @floatFromInt(@intFromBool(lhs > rhs)),
                 .less => @floatFromInt(@intFromBool(lhs < rhs)),
+                .greater => @floatFromInt(@intFromBool(lhs > rhs)),
+                .leq => @floatFromInt(@intFromBool(lhs <= rhs)),
+                .geq => @floatFromInt(@intFromBool(lhs >= rhs)),
                 .shift_left => @floatFromInt((@as(i64, @intFromFloat(lhs))) << @intCast(@as(i64, @intFromFloat(rhs)))),
                 .shift_right => @floatFromInt((@as(i64, @intFromFloat(lhs))) >> @intCast(@as(i64, @intFromFloat(rhs)))),
                 .bit_and => @floatFromInt(@as(i64, @intFromFloat(lhs)) & @as(i64, @intFromFloat(rhs))),
                 .bit_or => @floatFromInt(@as(i64, @intFromFloat(lhs)) | @as(i64, @intFromFloat(rhs))),
                 .bit_xor => @floatFromInt(@as(i64, @intFromFloat(lhs)) ^ @as(i64, @intFromFloat(rhs))),
                 .bit_not => @as(f64, (@floatFromInt(~@as(i64, @intFromFloat(lhs))))),
-                .eql => 0,
-                .lparen => 0,
-                .rparen => 0,
+                else => 0,
             };
         },
     }
@@ -199,7 +199,7 @@ fn parseBitAnd(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
 fn parseComparison(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
     var lhs = try parseBitShift(tokens, pos, arena);
 
-    while (pos.* < tokens.len and tokens[pos.*].type == .less or tokens[pos.*].type == .greater) {
+    while (pos.* < tokens.len and (tokens[pos.*].type == .less or tokens[pos.*].type == .greater or tokens[pos.*].type == .leq or tokens[pos.*].type == .geq)) {
         const tok = tokens[pos.*];
         pos.* += 1;
         const rhs = try parseBitShift(tokens, pos, arena);
@@ -324,6 +324,8 @@ pub fn makeBinaryNode(op: Token, lhs: *Node, rhs: *Node, arena: *Arena) ParseErr
             .modulo => .modulo,
             .greater => .greater,
             .less => .less,
+            .leq => .leq,
+            .geq => .geq,
             .shift_right => .shift_right,
             .shift_left => .shift_left,
             .bit_and => .bit_and,

@@ -10,6 +10,8 @@ pub const TokenType = enum {
     modulo,
     less,
     greater,
+    leq,
+    geq,
     shift_left,
     shift_right,
     bit_and,
@@ -89,6 +91,9 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
                 if (input[i + 1] == '<') {
                     try tokens.append(Token{ .type = .shift_left, .value = null });
                     i += 2;
+                } else if (input[i + 1] == '=') {
+                    try tokens.append(Token{ .type = .leq, .value = null });
+                    i += 2;
                 } else {
                     try tokens.append(Token{ .type = .less, .value = null });
                     i += 1;
@@ -97,6 +102,9 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
             '>' => {
                 if (input[i + 1] == '>') {
                     try tokens.append(Token{ .type = .shift_right, .value = null });
+                    i += 2;
+                } else if (input[i + 1] == '=') {
+                    try tokens.append(Token{ .type = .geq, .value = null });
                     i += 2;
                 } else {
                     try tokens.append(Token{ .type = .greater, .value = null });
