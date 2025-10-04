@@ -278,12 +278,14 @@ fn parseFactor(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
         .identifier => {
             if (pos.* < tokens.len and tokens[pos.*].type == .lparen) {
                 pos.* += 1;
-                var args = std.ArrayList(*Node).init(allocator);
+
+                const arr_l = std.ArrayList(*Node);
+                var args = arr_l.empty;
 
                 if (tokens[pos.*].type != .rparen) {
                     while (true) {
                         const arg = try parseExpression(tokens, pos, arena);
-                        try args.append(arg);
+                        try args.append(allocator, arg);
 
                         if (tokens[pos.*].type == .comma) {
                             pos.* += 1;
@@ -292,7 +294,7 @@ fn parseFactor(tokens: []Token, pos: *usize, arena: *Arena) ParseError!*Node {
                 }
                 try expect(tokens, pos, .rparen);
 
-                const arg_array = try args.toOwnedSlice();
+                const arg_array = try args.toOwnedSlice(allocator);
                 return try makeFunctionNode(tok, arg_array, arena);
             } else {
                 const reserved = [_][]const u8{ "sqrt", "sin", "cos", "pow", "exit" };

@@ -7,11 +7,13 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "bitwise",
-        .root_source_file = b.path("src/main.zig"),
-        .target = b.resolveTargetQuery(.{
-            .os_tag = if (windows) .windows else null,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = b.resolveTargetQuery(.{
+                .os_tag = if (windows) .windows else null,
+            }),
+            .optimize = optimize,
         }),
-        .optimize = optimize,
     });
 
     b.resolveInstallPrefix(".", .{ .exe_dir = "./bin" });

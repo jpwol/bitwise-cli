@@ -10,12 +10,21 @@ const term = @import("terminal.zig");
 const History = @import("history.zig").History;
 
 pub fn main() !u8 {
-    const stdin = std.io.getStdIn();
-    const stdout = std.io.getStdOut();
+    const stdin = std.fs.File.stdin();
+    const stdout = std.fs.File.stdout();
+    const stderr = std.fs.File.stderr();
 
-    const writer = stdout.writer();
-    const reader = stdin.reader();
-    const err_writer = std.io.getStdErr().writer();
+    var in_buf: [1024]u8 = undefined;
+    // var out_buf: [1024]u8 = undefined;
+    // var err_buf: [1024]u8 = undefined;
+
+    var stdin_wrapper = stdin.reader(&in_buf);
+    var stdout_wrapper = stdout.writer(&.{});
+    var stderr_wrapper = stderr.writer(&.{});
+
+    const writer = &stdout_wrapper.interface;
+    const reader = &stdin_wrapper.interface;
+    const err_writer = &stderr_wrapper.interface;
 
     var arena = try Arena.init(allocator, 1024);
     defer arena.deinit();

@@ -31,8 +31,9 @@ pub const Token = struct {
 };
 
 pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
-    var tokens = std.ArrayList(Token).init(allocator);
-    errdefer tokens.deinit();
+    const token_wrapper = std.ArrayList(Token);
+    var tokens = token_wrapper.empty;
+    // errdefer tokens.deinit();
     var i: usize = 0;
 
     while (i < input.len) {
@@ -49,95 +50,95 @@ pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
                         dot_seen = true;
                     }
                 }
-                try tokens.append(Token{ .type = .number, .value = input[start..i] });
+                try tokens.append(allocator, Token{ .type = .number, .value = input[start..i] });
             },
             '+' => {
-                try tokens.append(Token{ .type = .plus, .value = null });
+                try tokens.append(allocator, Token{ .type = .plus, .value = null });
                 i += 1;
             },
             '-' => {
-                try tokens.append(Token{ .type = .minus, .value = null });
+                try tokens.append(allocator, Token{ .type = .minus, .value = null });
                 i += 1;
             },
             '*' => {
-                try tokens.append(Token{ .type = .star, .value = null });
+                try tokens.append(allocator, Token{ .type = .star, .value = null });
                 i += 1;
             },
             '/' => {
-                try tokens.append(Token{ .type = .div, .value = null });
+                try tokens.append(allocator, Token{ .type = .div, .value = null });
                 i += 1;
             },
             '%' => {
-                try tokens.append(Token{ .type = .modulo, .value = null });
+                try tokens.append(allocator, Token{ .type = .modulo, .value = null });
                 i += 1;
             },
             '&' => {
-                try tokens.append(Token{ .type = .bit_and, .value = null });
+                try tokens.append(allocator, Token{ .type = .bit_and, .value = null });
                 i += 1;
             },
             '|' => {
-                try tokens.append(Token{ .type = .bit_or, .value = null });
+                try tokens.append(allocator, Token{ .type = .bit_or, .value = null });
                 i += 1;
             },
             '~' => {
-                try tokens.append(Token{ .type = .bit_not, .value = null });
+                try tokens.append(allocator, Token{ .type = .bit_not, .value = null });
                 i += 1;
             },
             '^' => {
-                try tokens.append(Token{ .type = .bit_xor, .value = null });
+                try tokens.append(allocator, Token{ .type = .bit_xor, .value = null });
                 i += 1;
             },
             '<' => {
                 if (input[i + 1] == '<') {
-                    try tokens.append(Token{ .type = .shift_left, .value = null });
+                    try tokens.append(allocator, Token{ .type = .shift_left, .value = null });
                     i += 2;
                 } else if (input[i + 1] == '=') {
-                    try tokens.append(Token{ .type = .leq, .value = null });
+                    try tokens.append(allocator, Token{ .type = .leq, .value = null });
                     i += 2;
                 } else {
-                    try tokens.append(Token{ .type = .less, .value = null });
+                    try tokens.append(allocator, Token{ .type = .less, .value = null });
                     i += 1;
                 }
             },
             '>' => {
                 if (input[i + 1] == '>') {
-                    try tokens.append(Token{ .type = .shift_right, .value = null });
+                    try tokens.append(allocator, Token{ .type = .shift_right, .value = null });
                     i += 2;
                 } else if (input[i + 1] == '=') {
-                    try tokens.append(Token{ .type = .geq, .value = null });
+                    try tokens.append(allocator, Token{ .type = .geq, .value = null });
                     i += 2;
                 } else {
-                    try tokens.append(Token{ .type = .greater, .value = null });
+                    try tokens.append(allocator, Token{ .type = .greater, .value = null });
                     i += 1;
                 }
             },
             '(' => {
-                try tokens.append(Token{ .type = .lparen, .value = null });
+                try tokens.append(allocator, Token{ .type = .lparen, .value = null });
                 i += 1;
             },
             ')' => {
-                try tokens.append(Token{ .type = .rparen, .value = null });
+                try tokens.append(allocator, Token{ .type = .rparen, .value = null });
                 i += 1;
             },
             '=' => {
-                try tokens.append(Token{ .type = .eql, .value = null });
+                try tokens.append(allocator, Token{ .type = .eql, .value = null });
                 i += 1;
             },
             ',' => {
-                try tokens.append(Token{ .type = .comma, .value = null });
+                try tokens.append(allocator, Token{ .type = .comma, .value = null });
                 i += 1;
             },
             else => {
                 if (std.ascii.isAlphabetic(c)) {
                     const start = i;
                     while (i < input.len and std.ascii.isAlphabetic(input[i])) : (i += 1) {}
-                    try tokens.append(Token{ .type = .identifier, .value = input[start..i] });
+                    try tokens.append(allocator, Token{ .type = .identifier, .value = input[start..i] });
                 } else {
                     return error.InvalidCharacter;
                 }
             },
         }
     }
-    try tokens.append(Token{ .type = .eof, .value = "" });
-    return tokens.toOwnedSlice();
+    try tokens.append(allocator, Token{ .type = .eof, .value = "" });
+    return tokens.toOwnedSlice(allocator);
 }

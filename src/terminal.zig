@@ -18,7 +18,7 @@ pub fn disableRawMode(fd: fd_t, original: termios) !void {
     try std.posix.tcsetattr(fd, std.posix.TCSA.NOW, original);
 }
 
-pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit: *bool) ![]const u8 {
+pub fn getInput(reader: *std.Io.Reader, writer: *std.Io.Writer, history: *History, should_exit: *bool) ![]const u8 {
     var i: usize = 0;
     var cursor_pos: usize = 0;
     var buf: [1024]u8 = undefined;
@@ -26,7 +26,7 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
 
     try writer.print("\x1b[34m>>>\x1b[0m ", .{});
     while (true) {
-        const char = try reader.readByte();
+        const char = try reader.takeByte();
         switch (char) {
             '\x04' => {
                 should_exit.* = true;
@@ -58,7 +58,7 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
             },
             '\x1b' => {
                 var seq: [2]u8 = undefined;
-                try reader.readNoEof(&seq);
+                try reader.readSliceAll(&seq);
                 switch (seq[1]) {
                     'A' => {
                         if (history_index > 0) {
@@ -70,7 +70,7 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
                             cursor_pos = line.?.len;
 
                             try writer.print("\r\x1b[2K", .{});
-                            try writer.print("\x1b[34m>>>\x1b[0m {?s}", .{line.?});
+                            try writer.print("\x1b[34m>>>\x1b[0m {s}", .{line.?});
                         }
                     },
                     'B' => {
@@ -88,7 +88,7 @@ pub fn getInput(reader: anytype, writer: anytype, history: *History, should_exit
                                 i = line.?.len;
                                 cursor_pos = line.?.len;
                                 try writer.print("\r\x1b[2K", .{});
-                                try writer.print("\x1b[34m>>>\x1b[0m {?s}", .{line.?});
+                                try writer.print("\x1b[34m>>>\x1b[0m {s}", .{line.?});
                             }
                         }
                     },
