@@ -8,14 +8,13 @@
 
 ---
 
-> **ℹ️ NEW!**
+> [!note]
 >
 > This program now runs in _non-canonical_ mode, allowing features such as input manipulation and input history! Like in
 > the shell, use the `UP` and `DOWN` arrow keys to cycle through input history, and `LEFT` and `RIGHT` arrow keys to seek
 > through the current buffer string.
 
 - Supports:
-
   - Variable assignment (`foo = 20`)
   - Certain _builtin_ functions
     - `sqrt(x)`
