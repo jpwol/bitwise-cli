@@ -1,8 +1,6 @@
 ## bitwise-cli
 
-**bitwise-cli** is a _command-line interpreter_ for arithmetic and bitwise expressions.
-
-- Written in **Zig** (blazing fast)
+**bitwise-cli** is a _command-line interpreter_ for arithmetic and bitwise expressions. Written in [Zig](https://ziglang.org) and blazing fast.
 
 ### Features
 
@@ -59,7 +57,7 @@ $> ./bitwise
 ---
 
 > [!NOTE]
-> Zig version 0.14.0 or higher is required
+> Zig version 0.15.0 or higher is required
 
 ```bash
 git clone https://github.com/jpwol/bitwise-cli.git
