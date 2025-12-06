@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os;
 const Node = @import("ast.zig").Node;
 const Lexer = @import("lexer.zig");
-const allocator = std.heap.page_allocator;
+const allocator = std.heap.smp_allocator;
 const Parser = @import("parser.zig");
 const HashTable = @import("hash.zig").HashTable;
 const Arena = @import("arena.zig").Arena;
@@ -26,10 +26,10 @@ pub fn main() !u8 {
     const reader = &stdin_wrapper.interface;
     const err_writer = &stderr_wrapper.interface;
 
-    var arena = try Arena.init(allocator, 1024);
+    var arena: Arena = try .init(allocator, 1024);
     defer arena.deinit();
 
-    var var_table = try HashTable(f64, 128).init(allocator);
+    var var_table: HashTable(f64, 128) = try .init(allocator);
     defer var_table.deinit();
 
     const pi_key = try allocator.dupe(u8, "PI");

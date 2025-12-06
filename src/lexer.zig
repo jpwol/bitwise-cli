@@ -31,8 +31,7 @@ pub const Token = struct {
 };
 
 pub fn lex(input: []const u8, allocator: std.mem.Allocator) ![]Token {
-    const token_wrapper = std.ArrayList(Token);
-    var tokens = token_wrapper.empty;
+    var tokens: std.ArrayList(Token) = .empty;
     // errdefer tokens.deinit();
     var i: usize = 0;
 
